@@ -88,7 +88,7 @@ export class BookResolver {
       });
 
       return await this.BookRepository.findOne(book.identifiers[0].id, {
-        relations: ["author"], // para relacionar e book con author
+        relations: ["author", "author.books"], // para relacionar e book con author
       });
     } catch {
       throw new Error(
@@ -101,7 +101,9 @@ export class BookResolver {
   @UseMiddleware(isAuth)
   async getAllBooks(): Promise<Book[]> {
     try {
-      return await this.BookRepository.find({ relations: ["author"] });
+      return await this.BookRepository.find({
+        relations: ["author", "author.books"],
+      });
     } catch {
       throw new Error();
     }
@@ -113,7 +115,7 @@ export class BookResolver {
   ): Promise<Book | undefined> {
     try {
       const book = await this.BookRepository.findOne(input.id, {
-        relations: ["author"],
+        relations: ["author", "author.books"],
       });
       if (!book) {
         const error = new Error();
@@ -130,10 +132,13 @@ export class BookResolver {
     @Arg("bookId", () => BookIdInput) bookId: BookIdInput
   ): Promise<Boolean> {
     try {
-      await this.BookRepository.delete(bookId.id);
+      const result = await this.BookRepository.delete(bookId.id);
+      if (result.affected === 0) {
+        throw new Error("Book no existe"); // tambien se puede consultar primero si el libro existe para poder borrarlo
+      }
       return true;
     } catch (e) {
-      throw new Error("Error en delte");
+      throw new Error("Error en delete");
     }
   }
 

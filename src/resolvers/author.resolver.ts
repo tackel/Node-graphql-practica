@@ -97,7 +97,14 @@ export class AuthorResolver {
   async deleteAuthor(
     @Arg("input", () => AuthorIdInput) input: AuthorIdInput
   ): Promise<Boolean> {
-    await this.authorRepository.delete(input.id);
-    return true;
+    try {
+      const auth = await this.authorRepository.findOne(input.id);
+      if (!auth) throw new Error("Autor no existe"); // elimina el autor si existe
+      // si elimino el autor tengoq ue eliminar sus libros, no puede haber un libro sin autro
+      await this.authorRepository.delete(input.id);
+      return true;
+    } catch {
+      throw new Error("Error en la eliminacion de autor");
+    }
   }
 }
